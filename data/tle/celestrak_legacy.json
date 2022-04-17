@@ -1,0 +1,237 @@
+{
+  "amateur.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/amateur.txt",
+    "comment": "Amateur Radio"
+  },
+  "analyst.txt": {
+    "comment": "Analyst Satellites",
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/analyst.txt"
+  },
+  "argos.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/argos.txt",
+    "comment": "ARGOS Data Collection System"
+  },
+  "beidou.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/beidou.txt",
+    "comment": "Beidou"
+  },
+  "cubesat.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/cubesat.txt",
+    "comment": "CubeSats"
+  },
+  "dmc.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/dmc.txt",
+    "comment": "Disaster Monitoring"
+  },
+  "education.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/education.txt",
+    "comment": "Education"
+  },
+  "enabled.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/enabled.txt",
+    "comment": "Active Satellites"
+  },
+  "engineering.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/engineering.txt",
+    "comment": "Engineering"
+  },
+  "galileo.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/galileo.txt",
+    "comment": "Galileo"
+  },
+  "geo.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/geo.txt",
+    "comment": "Active Geosynchronous"
+  },
+  "geodetic.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/geodetic.txt",
+    "comment": "Geodetic"
+  },
+  "globalstar.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/globalstar.txt",
+    "comment": "Globalstar"
+  },
+  "glo-ops.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/glo-ops.txt",
+    "comment": "GLONASS Operational"
+  },
+  "gnss.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/gnss.txt",
+    "comment": "GNSS"
+  },
+  "goes.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/goes.txt",
+    "comment": "GOES"
+  },
+  "gorizont.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/gorizont.txt",
+    "comment": "Gorizont"
+  },
+  "gps-ops.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/gps-ops.txt",
+    "comment": "GPS Operational"
+  },
+  "intelsat.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/intelsat.txt",
+    "comment": "Intelsat"
+  },
+  "iridium.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/iridium.txt",
+    "comment": "Iridium"
+  },
+  "iridium-next.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/iridium-next.txt",
+    "comment": "Iridium NEXT"
+  },
+  "military.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/military.txt",
+    "comment": "Miscellaneous Military"
+  },
+  "molniya.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/molniya.txt",
+    "comment": "Molniya"
+  },
+  "musson.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/musson.txt",
+    "comment": "Russian LEO Navigation"
+  },
+  "nnss.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/nnss.txt",
+    "comment": "Navy Navigation Satellite System (NNSS)"
+  },
+  "noaa.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/noaa.txt",
+    "comment": "NOAA"
+  },
+  "oneweb.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/oneweb.txt",
+    "comment": "OneWeb"
+  },
+  "orbcomm.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/orbcomm.txt",
+    "comment": "Orbcomm"
+  },
+  "other.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/other.txt",
+    "comment": "Other Satellites"
+  },
+  "other-comm.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/other-comm.txt",
+    "comment": "Other Comm"
+  },
+  "radar.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/radar.txt",
+    "comment": "Radar Calibration"
+  },
+  "raduga.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/raduga.txt",
+    "comment": "Raduga"
+  },
+  "resource.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/resource.txt",
+    "comment": "Earth Resources"
+  },
+  "sarsat.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/sarsat.txt",
+    "comment": "Search & Rescue (SARSAT)"
+  },
+  "satnogs.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/satnogs.txt",
+    "comment": "SatNOGS"
+  },
+  "sbas.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/sbas.txt",
+    "comment": "Satellite-Based Augmentation System (WAAS/EGNOS/MSAS)"
+  },
+  "science.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/science.txt",
+    "comment": "Space & Earth Science"
+  },
+  "ses.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/ses.txt",
+    "comment": "SES"
+  },
+  "spire.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/spire.txt",
+    "comment": "Spire"
+  },
+  "starlink.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/starlink.txt",
+    "comment": "Starlink"
+  },
+  "stations.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/stations.txt",
+    "comment": "Space Stations"
+  },
+  "swarm.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/swarm.txt",
+    "comment": "Swarm"
+  },
+  "tdrss.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/tdrss.txt",
+    "comment": "Tracking and Data Relay Satellite System (TDRSS)"
+  },
+  "tle-new.txt": {
+    "comment": "Last 30 Days' Launches",
+    "url": "http://www.celestrak.com/NORAD/elements/tle-new.txt",
+    "enabled": true
+  },
+  "visual.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/visual.txt",
+    "comment": "100 (or so) Brightest"
+  },
+  "weather.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/weather.txt",
+    "comment": "Weather"
+  },
+  "x-comm.txt": {
+    "enabled": true,
+    "url": "http://www.celestrak.com/NORAD/elements/x-comm.txt",
+    "comment": "Experimental Comm"
+  }
+}

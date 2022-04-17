@@ -5,10 +5,10 @@
 
 #include "SDRunoPlugin_SatTrackSettingsDialog.h"
 #include "SDRunoPlugin_SatTrackForm.h"
+#include "PredictDialog.h"
 #include "resource.h"
 #include <io.h>
 #include <shlobj.h>
-
 
 // Form constructor with handles to parent and uno controller - launches form SatTrackForm
 SDRunoPlugin_SatTrackSettingsDialog::SDRunoPlugin_SatTrackSettingsDialog(SDRunoPlugin_SatTrackForm& parent, IUnoPluginController& controller) :
@@ -29,26 +29,6 @@ SDRunoPlugin_SatTrackSettingsDialog::~SDRunoPlugin_SatTrackSettingsDialog() {
 void SDRunoPlugin_SatTrackSettingsDialog::Run() {
 	show();
 	nana::exec();
-}
-
-int SDRunoPlugin_SatTrackSettingsDialog::LoadX() {
-	std::string tmp;
-	m_controller.GetConfigurationKey("SatTrack.X", tmp);
-	if (tmp.empty()) {
-		return -1;
-	}
-	return stoi(tmp);
-}
-
-// Load Y from the ini file (if exists)
-// TODO: Change Template to plugin name
-int SDRunoPlugin_SatTrackSettingsDialog::LoadY() {
-	std::string tmp;
-	m_controller.GetConfigurationKey("SatTrack.Y", tmp);
-	if (tmp.empty()) {
-		return -1;
-	}
-	return stoi(tmp);
 }
 
 // Create the settings dialog form
@@ -116,6 +96,7 @@ void SDRunoPlugin_SatTrackSettingsDialog::Setup() {
 	tb_obs_lat.tooltip("Positive: Above the equator (N), Negative: Below the equator (S)");
 	tb_obs_elev.multi_lines(false);
 	tb_freq.multi_lines(false);
+	tb_bw.multi_lines(false);
 
 	tb_obs_name.caption(m_parent.GetLocationName());
 	tb_obs_name.events().text_changed([&]() { m_parent.SetLocationName(tb_obs_name.text()); });
@@ -136,49 +117,70 @@ void SDRunoPlugin_SatTrackSettingsDialog::Setup() {
 	lb_obs.transparent(true);
 	lb_obs.caption("Location : ");
 
+	lb_hfreq.fgcolor(nana::colors::white);
+	lb_hfreq.transparent(true);
+	lb_hfreq.caption("Freq. (MHz)");
+
+	lb_hmode.fgcolor(nana::colors::white);
+	lb_hmode.transparent(true);
+	lb_hmode.caption("Mode");
+
+	lb_hbw.fgcolor(nana::colors::white);
+	lb_hbw.transparent(true);
+	lb_hbw.caption("BW (Hz)");
+
 	lb_freq.fgcolor(nana::colors::white);
 	lb_freq.transparent(true);
-	lb_freq.caption("Dnlink (MHz):");
+	lb_freq.caption("Downlink:");
 
 	lb_map.fgcolor(nana::colors::white);
 	lb_map.transparent(true);
 	lb_map.caption("Map size:");
 
-	if (!std::filesystem::exists(m_parent.GetTLEListName())) {
+	if (!std::filesystem::exists(m_parent.GetTLEListName()) || !parse_file(m_parent.GetTLEListName(), sat_list_) || !sat_list_.is_object()) {
 		nana::msgbox mb(*this, "Settings");
-		mb << m_parent.GetTLEListName() << " not found, Please check the " << m_parent.GetTLEFilesFolder() << " folder.";
+		mb << m_parent.GetTLEListName() << " not found or incorrect, Please check the " << m_parent.GetTLEFilesFolder() << " folder.";
 		mb.show();
 	}
 	else {
-		flist = load_tle_file_list(m_parent.GetTLEListName());
+		const auto& flist = sat_list_.get_object();
+
+		std::string selected_file = "";
+
 		int selected_file_index = 0;
-		for (auto i = 0; i < (int)flist.size(); i++) {
-			tle_list_line_t l = flist[i];
-			cb_file.push_back(l.filename);
-			if (m_parent.GetTLEFile() == l.filename)
-				selected_file_index = i;
+		int i = 0;
+		for (auto& [key, value] : flist) {
+			if (value["enabled"].bool_val()) {
+				if (selected_file_index == 0)
+					selected_file = key;
+
+				cb_file.push_back(key);
+
+				if (m_parent.GetTLEFile() == key) {
+					selected_file_index = i;
+					selected_file = key;
+				}
+
+				i++;
+			}
 		}
 		cb_file.option(selected_file_index);
-		lb_comment.caption(flist[selected_file_index].comment);
+		lb_comment.caption(sat_list_[selected_file]["comment"].str_val());
 
-		bool file_found = std::filesystem::exists(m_parent.GetTLEFilesFolder() + flist[selected_file_index].filename);
+		bool file_found = std::filesystem::exists(m_parent.GetTLEFilesFolder() + selected_file);
 		if (!file_found) {
-			file_found = download_tle_file(nana::to_wstring(flist[selected_file_index].url), nana::to_wstring(m_parent.GetTLEFilesFolder() + flist[selected_file_index].filename));
+			file_found = download_tle_file(nana::to_wstring(sat_list_[selected_file]["url"].str_val()), nana::to_wstring(m_parent.GetTLEFilesFolder() + selected_file));
 			if (!file_found) {
 				nana::msgbox mb(*this, "Settings");
-				mb << "Cannot download " << flist[selected_file_index].filename << " from " << flist[selected_file_index].url << ", Please check the " << m_parent.GetTLEListName() << " file.";
+				mb << "Cannot download " << selected_file << " from " << sat_list_[selected_file]["url"].str_val() << ", Please check the " << m_parent.GetTLEListName() << " file.";
 				mb.show();
 			}
 		}
 
 		int selected_sat_index = 0;
-
 		if (file_found) {
-			tle_map_list sat_list = load_tle_file(m_parent.GetTLEFilesFolder() + flist[selected_file_index].filename);
+			tle_map_list sat_list = load_tle_file(m_parent.GetTLEFilesFolder() + selected_file);
 			for (auto& it : sat_list) {
-				if (it.first.find("[-]") != std::string::npos || it.first.find("[D]") != std::string::npos)
-					continue;
-
 				cb_sat.push_back(it.first);
 			}
 			selected_sat_index = sat_list.contains(m_parent.GetSatName()) ? (int)std::distance(sat_list.begin(), sat_list.find(m_parent.GetSatName())) : 0;
@@ -192,6 +194,9 @@ void SDRunoPlugin_SatTrackSettingsDialog::Setup() {
 
 	cb_sat.events().selected([&](const nana::arg_combox& ar_cbx) {
 		update_sat(ar_cbx.widget.caption());
+		tb_freq.from(m_parent.GetDownlinkFreq());
+		cb_mod.caption(m_parent.GetModulation());
+		tb_bw.from(m_parent.GetBandwidth());
 							 });
 
 	tb_obs_lon.from(m_parent.GetLongitude());
@@ -206,6 +211,20 @@ void SDRunoPlugin_SatTrackSettingsDialog::Setup() {
 	tb_freq.from(m_parent.GetDownlinkFreq());
 	tb_freq.events().text_changed([&]() { m_parent.SetDownlinkFreq(tb_freq.to_double()); });
 
+	cb_mod.push_back("AM");
+	cb_mod.push_back("FM");
+	cb_mod.push_back("DSB");
+	cb_mod.push_back("LSB");
+	cb_mod.push_back("USB");
+	cb_mod.push_back("DIGITAL");
+	cb_mod.push_back("IQ");
+	cb_mod.caption(m_parent.GetModulation());
+	cb_mod.events().selected([&](const nana::arg_combox& ar_cbx) {
+		m_parent.SetModulation(ar_cbx.widget.caption());
+							 });
+	tb_bw.from(m_parent.GetBandwidth());
+	tb_bw.events().text_changed([&]() { m_parent.SetBandwidth(tb_bw.to_double()); });
+
 	cb_map.push_back("Small");
 	cb_map.push_back("Medium");
 	cb_map.push_back("Large");
@@ -217,19 +236,21 @@ void SDRunoPlugin_SatTrackSettingsDialog::Setup() {
 
 	btn_update.caption("Update TLE files");
 	btn_update.events().click([&]() { update_all_tle_files(); });
+
+	btn_predict.caption("Predictions...");
+	btn_predict.events().click([&]() { PredictButton_Click(); });
 }
 
 void SDRunoPlugin_SatTrackSettingsDialog::update_tle_file(const std::string& newFile) {
 	if (newFile != m_parent.GetTLEFile()) {
-		size_t selected = cb_file.option();
-		tle_list_line_t l = flist[selected];
 
-		bool file_found = std::filesystem::exists(m_parent.GetTLEFilesFolder() + l.filename);
+		bool file_found = std::filesystem::exists(m_parent.GetTLEFilesFolder() + newFile);
 		if (!file_found) {
-			file_found = download_tle_file(nana::to_wstring(l.url), nana::to_wstring(m_parent.GetTLEFilesFolder() + l.filename));
+			file_found = download_tle_file(nana::to_wstring(sat_list_[newFile]["url"].str_val()), nana::to_wstring(m_parent.GetTLEFilesFolder() + newFile));
+
 			if (!file_found) {
 				nana::msgbox mb(*this, "Settings");
-				mb << "Cannot download " << l.filename << " from " << l.url << ", Please check the " << m_parent.GetTLEListName() << " file.";
+				mb << "Cannot download " << newFile << " from " << sat_list_[newFile]["url"].str_val() << ", Please check the " << m_parent.GetTLEListName() << " file.";
 				mb.show();
 			}
 		}
@@ -237,14 +258,11 @@ void SDRunoPlugin_SatTrackSettingsDialog::update_tle_file(const std::string& new
 		cb_sat.clear();
 
 		if (file_found) {
-			lb_comment.caption(l.comment);
-			m_parent.SetTLEFile(l.filename);
+			lb_comment.caption(sat_list_[newFile]["comment"].str_val());
+			m_parent.SetTLEFile(newFile);
 
-			tle_map_list sat_list = load_tle_file(m_parent.GetTLEFilesFolder() + l.filename);
+			tle_map_list sat_list = load_tle_file(m_parent.GetTLEFilesFolder() + newFile);
 			for (auto& it : sat_list) {
-				if (it.first.find("[-]") != std::string::npos || it.first.find("[D]") != std::string::npos)
-					continue;
-
 				cb_sat.push_back(it.first);
 			}
 			int selected_sat_index = sat_list.contains(m_parent.GetSatName()) ? (int)std::distance(sat_list.begin(), sat_list.find(m_parent.GetSatName())) : 0;
@@ -258,27 +276,20 @@ void SDRunoPlugin_SatTrackSettingsDialog::update_tle_file(const std::string& new
 
 void SDRunoPlugin_SatTrackSettingsDialog::update_all_tle_files() {
 
-	if (!std::filesystem::exists(m_parent.GetTLEListName())) {
-		nana::msgbox mb(*this, "Updating");
-		mb << m_parent.GetTLEListName() << " not found, Please check the " << m_parent.GetTLEFilesFolder() << " folder.";
-		mb.show();
-	}
-	else {
-		std::vector<tle_list_line_t> list = load_tle_file_list(m_parent.GetTLEListName());
-		for (auto& f : list) {
-			if (std::filesystem::exists(m_parent.GetTLEFilesFolder() + f.filename)) {
-				std::filesystem::rename(m_parent.GetTLEFilesFolder() + f.filename, m_parent.GetTLEFilesFolder() + f.filename + ".bak");
+	const auto& flist = sat_list_.get_object();
+	for (auto& [key, value] : flist) {
+		if (std::filesystem::exists(m_parent.GetTLEFilesFolder() + key)) {
+			std::filesystem::rename(m_parent.GetTLEFilesFolder() + key, m_parent.GetTLEFilesFolder() + key + ".bak");
 
-				if (!download_tle_file(nana::to_wstring(f.url), nana::to_wstring(m_parent.GetTLEFilesFolder() + f.filename))) {
-					std::filesystem::rename(m_parent.GetTLEFilesFolder() + f.filename + ".bak", m_parent.GetTLEFilesFolder() + f.filename);
+			if (!download_tle_file(nana::to_wstring(sat_list_[key]["url"].str_val()), nana::to_wstring(m_parent.GetTLEFilesFolder() + key))) {
+				std::filesystem::rename(m_parent.GetTLEFilesFolder() + key + ".bak", m_parent.GetTLEFilesFolder() + key);
 
-					nana::msgbox mb(*this, "Updating");
-					mb << "Cannot download " << f.filename << " from " << f.url << ", Please check the " << m_parent.GetTLEListName() << " file.";
-					mb.show();
-				}
-				else
-					std::filesystem::remove(m_parent.GetTLEFilesFolder() + f.filename + ".bak");
+				nana::msgbox mb(*this, "Updating");
+				mb << "Cannot download " << key << " from " << sat_list_[key]["url"].str_val() << ", Please check the " << m_parent.GetTLEListName() << " file.";
+				mb.show();
 			}
+			else
+				std::filesystem::remove(m_parent.GetTLEFilesFolder() + key + ".bak");
 		}
 	}
 }
@@ -290,4 +301,17 @@ void SDRunoPlugin_SatTrackSettingsDialog::update_sat(const std::string& newSat) 
 void SDRunoPlugin_SatTrackSettingsDialog::update_map_size(size_t sz) {
 
 	m_parent.SetMapSize(static_cast<e_map_type>(sz));
+}
+
+
+void SDRunoPlugin_SatTrackSettingsDialog::PredictButton_Click() {
+	PredictDialog predictDialog{ m_parent };
+	this->enabled(false);
+	predictDialog.events().unload([&] { PredictDialog_Closed(); });
+	predictDialog.Run();
+}
+
+void SDRunoPlugin_SatTrackSettingsDialog::PredictDialog_Closed() {
+	this->enabled(true);
+	this->focus();
 }

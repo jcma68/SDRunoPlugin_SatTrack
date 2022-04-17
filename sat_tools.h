@@ -3,7 +3,10 @@
 #include <string>
 #include <vector>
 
-#define TLE_LIST	"celestrak_legacy.list"
+#include "json_parser.h"
+
+#define TLE_LIST	"celestrak_legacy.json"
+#define CONFIG_FILE	"satrack_config.json"
 
 struct tle_list_line_t {
 	std::string url;
@@ -11,6 +14,6 @@ struct tle_list_line_t {
 	std::string comment;
 };
 
-tle_list_line_t split_tle_list_line(const std::string& str);
 bool download_tle_file(const std::wstring& url, const std::wstring& dest);
-std::vector<tle_list_line_t> load_tle_file_list(const std::string& filename);
+void create_default_config(const std::string& filename);
+void create_sat_entry(json_utils::json_value& satellites, const std::string& name);

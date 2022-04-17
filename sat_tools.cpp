@@ -11,44 +11,6 @@
 
 #endif
 
-static inline void ltrim(std::string& s) {
-	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-		return !std::isspace(ch);
-	}));
-}
-
-static inline void rtrim(std::string& s) {
-	s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-		return !std::isspace(ch);
-	 }).base(), s.end());
-}
-
-static inline void trim(std::string& s) {
-	ltrim(s);
-	rtrim(s);
-}
-
-tle_list_line_t split_tle_list_line(const std::string& str) {
-	tle_list_line_t res{};
-
-	std::size_t bar = str.rfind('|');
-	if (bar == std::string::npos)
-		return res; // malformed
-
-	res.url = str.substr(0, bar);
-	trim(res.url);
-
-	res.comment = str.substr(bar + 1);
-	trim(res.comment);
-
-	std::size_t slash = res.url.rfind('/');
-	if (slash != std::string::npos) {
-		res.filename = res.url.substr(slash + 1);
-		trim(res.filename);
-	}
-
-	return res;
-}
 
 #ifdef _WIN32
 bool download_tle_file(const std::wstring& url, const std::wstring& dest) {
@@ -56,29 +18,67 @@ bool download_tle_file(const std::wstring& url, const std::wstring& dest) {
 }
 #endif
 
-std::vector<tle_list_line_t> load_tle_file_list(const std::string& filename) {
-	std::vector<tle_list_line_t>  list;
+void create_default_config(const std::string& filename) {
+	using namespace json_utils;
 
-	std::ifstream in(filename.c_str());
-	if (!in) {
-		return list;
-	}
+	json_value opt_list;
 
-	std::string str;
-	while (true) {
-		if (!std::getline(in, str))
-			break;
+	json_value current;
+	current.add_pair("name", "NOAA 15");
+	current.add_pair("tle_file", "weather.txt");
+	current.add_pair("comment", "Weather");
+	current.add_pair("map_size", 0);
 
-		rtrim(str);
-		if (str.size() == 0)
-			continue;
+	opt_list.add_pair("current", current);
 
-		tle_list_line_t l = split_tle_list_line(str);
-		list.push_back(l);
-	}
+	json_value loc;
+	loc.add_pair("name", "Greenwich");
+	loc.add_pair("latitude", 51.482578);
+	loc.add_pair("longitude", -0.007659);
+	loc.add_pair("elevation", 6.09);
 
-	in.close();
+	opt_list.add_pair("location", loc);
 
-	return list;
+	json_value satellites;
+
+	json_value sat;
+	sat.add_pair("modulation", "FM");
+	sat.add_pair("downlink", 137.62);
+	sat.add_pair("mode", "APT");
+	sat.add_pair("bandwidth", 38000.0);
+	sat.add_pair("bauds", 1700.0);
+	satellites.add_pair("NOAA 15", sat);
+
+	sat["downlink"] = 137.9125;
+	satellites.add_pair("NOAA 18", sat);
+
+	sat["downlink"] = 137.1;
+	satellites.add_pair("NOAA 19", sat);
+
+	sat["downlink"] = 137.1;
+	sat["mode"] = "LRPT";
+	sat["bandwidth"] = 150000.0;
+	sat["bauds"] = 80000;
+	satellites.add_pair("METEOR-M 2", sat);
+
+	opt_list.add_pair("satellites", satellites);
+
+	json_value filter;
+	filter.add_pair("sat_elevation", json_utils::json_value{ 0.0 });
+
+	opt_list.add_pair("selections", filter);
+
+	opt_list.save_to(filename);
 }
 
+void create_sat_entry(json_utils::json_value& satellites, const std::string& name) {
+	using namespace json_utils;
+
+	json_value sat;
+	sat.add_pair("modulation", "FM");
+	sat.add_pair("downlink", 137.1);
+	sat.add_pair("mode", "APT");
+	sat.add_pair("bandwidth", 38000.0);
+	sat.add_pair("bauds", 1700.0);
+	satellites.add_pair(name, sat);
+}

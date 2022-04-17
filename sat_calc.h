@@ -65,6 +65,10 @@ inline double to_lmst(double jd, double lon) {
 	return std::fmod(to_gmst(jd) + lon, 2 * M_PI);
 }
 
+double tz_seconds();
+
+std::string julian_to_string(double jd, bool utc);
+
 struct vector_t {
 	double x, y, z;
 
@@ -280,3 +284,7 @@ void parse_tle_lines(const line_pair& tle_data, char opsmode, gravconsttype whic
 eci_pos_t get_sat_pos(double t_since, elsetrec& satrec);
 
 int get_orbit_num(double jd, const elsetrec& satrec);
+
+std::tuple<double, double> calc_azm_elev(double jd, observer_t& observer, elsetrec& satrec);
+double calc_elev(double jd, observer_t& observer, elsetrec& satrec);
+double regula_falsi(double xg, double xd, observer_t& observer, elsetrec& satrec);

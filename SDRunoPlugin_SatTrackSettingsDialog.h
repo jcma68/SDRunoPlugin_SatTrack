@@ -22,7 +22,7 @@
 
 // TODO: Change these numbers to the height and width of your form
 #define dialogFormWidth (350)
-#define dialogFormHeight (260)
+#define dialogFormHeight (320)
 
 class SDRunoPlugin_SatTrackForm;
 
@@ -39,12 +39,13 @@ public:
 private:
 
 	void Setup();
-	int LoadX();
-	int LoadY();
+
+	void PredictButton_Click();
+	void PredictDialog_Closed();
 
 	// TODO: Now add your UI controls here
 
-	std::vector<tle_list_line_t> flist{};
+	json_utils::json_value sat_list_{};
 
 	void update_tle_file(const std::string& newFile);
 	void update_all_tle_files();
@@ -77,13 +78,22 @@ private:
 	nana::label lb_obs_helev{ *this, nana::rectangle(250, 155, 80, 20) };
 	nana::textbox tb_obs_elev{ *this,   nana::rectangle(250, 170, 70, 20) };
 
-	nana::label lb_freq{ *this, nana::rectangle(10, 200, 80, 20) };
-	nana::textbox tb_freq{ *this,   nana::rectangle(90, 200, 80, 20) };
+	nana::label lb_hfreq{ *this, nana::rectangle(90, 200, 80, 20) };
+	nana::label lb_hmode{ *this, nana::rectangle(170, 200, 80, 20) };
+	nana::label lb_hbw{ *this, nana::rectangle(250, 200, 80, 20) };
 
-	nana::label lb_map{ *this, nana::rectangle(10, 225, 80, 20) };
-	nana::combox cb_map{ *this, nana::rectangle{ 90, 225, 120, 20 } };
+	nana::label lb_freq{ *this, nana::rectangle(10, 215, 80, 20) };
 
-	nana::button btn_update{ *this, nana::rectangle((dialogFormWidth - 100) / 2, 265, 100, 20) };
+	nana::textbox tb_freq{ *this,   nana::rectangle(90, 215, 70, 20) };
+	nana::combox cb_mod{ *this,   nana::rectangle(170, 215, 70, 20) };
+	nana::textbox tb_bw{ *this,   nana::rectangle(250, 215, 70, 20) };
+
+	nana::label lb_map{ *this, nana::rectangle(10, 250, 80, 20) }; // +50
+	nana::combox cb_map{ *this, nana::rectangle{ 90, 250, 120, 20 } };
+
+	nana::button btn_update{ *this, nana::rectangle((dialogFormWidth - 200) / 3, 280, 100, 20) };
+
+	nana::button btn_predict{ *this, nana::rectangle(2 *(dialogFormWidth - 200) / 3 + 100, 280, 100, 20) };
 
 	SDRunoPlugin_SatTrackForm& m_parent;
 	IUnoPluginController & m_controller;

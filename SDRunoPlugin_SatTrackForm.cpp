@@ -11,8 +11,6 @@
 #include <io.h>
 #include <shlobj.h>
 
-#include "sat_tools.h"
-
 #define VERSION "V1.0"
 
 // Form constructor with handles to parent and uno controller - launches form Setup
@@ -41,7 +39,7 @@ void SDRunoPlugin_SatTrackForm::Run() {
 
 static bool load_image_from_res(nana::paint::image& img, unsigned short id) {
 	HDC hdc = GetDC(NULL);
-	if (hdc == NULL) 
+	if (hdc == NULL)
 		return false;
 
 	HMODULE hModule = GetModuleHandle(L"SDRunoPlugin_SatTrack");
@@ -74,7 +72,6 @@ static bool load_image_from_res(nana::paint::image& img, unsigned short id) {
 	if (GetDIBits(hdc, hBitmap, 0, bitmapInfo.bmiHeader.biHeight, (LPVOID)(lpPixels.get() + rawDataOffset), &bitmapInfo, DIB_RGB_COLORS) == NULL) 
 		return false;
 	
-
 	img.open(lpPixels.get(), bitmapInfo.bmiHeader.biSizeImage);
 
 	ReleaseDC(NULL, hdc);
@@ -90,7 +87,7 @@ void SDRunoPlugin_SatTrackForm::Setup() {
 	unsigned int formWidth = default_formWidth;
 	unsigned int formHeight = default_formHeight;
 
-	nana::size window_map_size = sattrack_widget::calc_window_size(map_type_);
+	nana::size window_map_size = sattrack_widget::calc_window_size(GetMapSize());
 
 	formWidth = window_map_size.width + (2 * sideBorderWidth);
 	formHeight = window_map_size.height + topBarHeight + bottomBarHeight;
@@ -200,9 +197,9 @@ void SDRunoPlugin_SatTrackForm::Setup() {
 	// TODO: Extra Form code goes here
 
 	sattrack_ctrl.bgcolor(nana::colors::black);
-	sattrack_ctrl.set_map(map_type_, maps_dirs_);
-	sattrack_ctrl.set_downlink_freq(downlinkFreq_ * 1000000.0);
-	sattrack_ctrl.set_site(location_name_, obs_lat_deg_, obs_lon_deg_, obs_elev_in_meters_);
+	sattrack_ctrl.set_map(GetMapSize(), maps_dirs_);
+	sattrack_ctrl.set_downlink_freq(GetDownlinkFreq() * 1000000.0);
+	sattrack_ctrl.set_site(GetLocationName(), GetLatitude(), GetLongitude(), GetElevation());
 
 	SatChanged();
 
@@ -216,19 +213,19 @@ void SDRunoPlugin_SatTrackForm::Setup() {
 void SDRunoPlugin_SatTrackForm::SatChanged() {
 	sattrack_ctrl.stop();
 
-	if (!std::filesystem::exists(tle_files_dirs_ + current_file_)) {
+	if (!std::filesystem::exists(tle_files_dirs_ + GetTLEFile())) {
 		nana::msgbox mb(*this, "SDRunoPlugin_SatTrackForm");
-		mb << tle_files_dirs_ + current_file_ << " not found, Please check the " << tle_list_ << " folder.";
+		mb << tle_files_dirs_ + GetTLEFile() << " not found, Please check the " << tle_files_dirs_ << " folder.";
 		mb.show();
 	}
 	else {
-		tle_map_list sat_list = load_tle_file(tle_files_dirs_ + current_file_);
-		if (sat_list.contains(current_sat_)) {
-			line_pair tle_data = sat_list[current_sat_];
+		tle_map_list sat_list = load_tle_file(tle_files_dirs_ + GetTLEFile());
+		if (sat_list.contains(GetSatName())) {
+			line_pair tle_data = sat_list[GetSatName()];
 			elsetrec satrec{};
 			parse_tle_lines(tle_data, 'a', wgs72, satrec);
 			if (!satrec.error) {
-				sattrack_ctrl.set_satellite(current_sat_, satrec);
+				sattrack_ctrl.set_satellite(GetSatName(), satrec);
 			}
 		}
 	}
@@ -261,67 +258,172 @@ void SDRunoPlugin_SatTrackForm::SettingsDialog_Closed()
 	//TODO: Extra code goes here to be preformed when settings dialog form closes
 
 	SavePos();
+	config_.save_to(config_file_);
 }
 
-inline void SDRunoPlugin_SatTrackForm::SetDatasFolder(const std::string& name) {
+void SDRunoPlugin_SatTrackForm::SetDatasFolder(const std::string& name) {
 	data_dir_ = (name.back() != '\\') ? name + "\\" : name;
 	maps_dirs_ = data_dir_ + "maps\\";
 	tle_files_dirs_ = data_dir_ + "tle\\";
 	tle_list_ = tle_files_dirs_ + TLE_LIST;
+	config_file_ = tle_files_dirs_ + CONFIG_FILE;
+
 	m_controller.SetConfigurationKey("SatTrack.DatasFolder", data_dir_);
+
 	SatChanged();
 }
 
 void SDRunoPlugin_SatTrackForm::SetTLEFile(const std::string& name) {
-	current_file_ = name;
-	m_controller.SetConfigurationKey("SatTrack.TLEfile", current_file_);
+	config_["current"]["tle_file"] = name;
 }
 
 void SDRunoPlugin_SatTrackForm::SetSatName(const std::string& name) {
-	if (current_sat_ != name) {
-		current_sat_ = name;
-		m_controller.SetConfigurationKey("SatTrack.SatName", current_sat_);
+
+	if (config_["current"]["name"].str_val() != name) {
+		config_["current"]["name"] = name;
+
 		SatChanged();
 	}
 }
 
 void SDRunoPlugin_SatTrackForm::SetLocationName(const std::string& name) {
-	location_name_ = name;
-	m_controller.SetConfigurationKey("SatTrack.LocationName", location_name_);
-	sattrack_ctrl.set_site(location_name_, obs_lat_deg_, obs_lon_deg_, obs_elev_in_meters_);
+	auto& loc = config_["location"];
+
+	loc["name"] = name;
+
+	sattrack_ctrl.set_site(name, loc["latitude"].num_val(), loc["longitude"].num_val(), loc["elevation"].num_val());
 }
 
 void SDRunoPlugin_SatTrackForm::SetLatitude(double value) {
-	obs_lat_deg_ = value;
-	m_controller.SetConfigurationKey("SatTrack.LocLatitude", std::to_string(obs_lat_deg_));
-	sattrack_ctrl.set_site(location_name_, obs_lat_deg_, obs_lon_deg_, obs_elev_in_meters_);
+	auto& loc = config_["location"];
+
+	loc["latitude"] = value;
+
+	sattrack_ctrl.set_site(loc["name"].str_val(), value, loc["longitude"].num_val(), loc["elevation"].num_val());
 }
 
 void SDRunoPlugin_SatTrackForm::SetLongitude(double value) {
-	obs_lon_deg_ = value;
-	m_controller.SetConfigurationKey("SatTrack.LocLongitude", std::to_string(obs_lon_deg_));
-	sattrack_ctrl.set_site(location_name_, obs_lat_deg_, obs_lon_deg_, obs_elev_in_meters_);
+	auto& loc = config_["location"];
+
+	loc["longitude"] = value;
+
+	sattrack_ctrl.set_site(loc["name"].str_val(), loc["latitude"].num_val(), value, loc["elevation"].num_val());
 }
 
 void SDRunoPlugin_SatTrackForm::SetElevation(double value) {
-	obs_elev_in_meters_ = value;
-	m_controller.SetConfigurationKey("SatTrack.LocElevation", std::to_string(obs_elev_in_meters_));
-	sattrack_ctrl.set_site(location_name_, obs_lat_deg_, obs_lon_deg_, obs_elev_in_meters_);
+
+	auto& loc = config_["location"];
+
+	loc["elevation"] = value;
+
+	sattrack_ctrl.set_site(loc["name"].str_val(), loc["latitude"].num_val(), loc["longitude"].num_val(), value);
 }
 
 void SDRunoPlugin_SatTrackForm::SetDownlinkFreq(double value) {
-	downlinkFreq_ = value;
-	m_controller.SetConfigurationKey("SatTrack.DownlinkFreq", std::to_string(downlinkFreq_));
-	sattrack_ctrl.set_downlink_freq(downlinkFreq_ * 1000000.0);
+
+	const std::string& name = GetSatName();
+
+	auto& sats = config_["satellites"];
+	if (!sats.contains_key(name)) {
+		create_sat_entry(sats, name);
+	}
+	sats[name]["downlink"] = value;
+
+	sattrack_ctrl.set_downlink_freq(value * 1000000.0);
 }
 
 void SDRunoPlugin_SatTrackForm::SetMapSize(e_map_type sz) {
-	map_type_ = sz;
-	m_controller.SetConfigurationKey("SatTrack.MapSize", std::to_string(e_map_type_to_int(map_type_)));
+	config_["current"]["map_size"] = e_map_type_to_int(sz);
+
 	sattrack_ctrl.stop();
-	ResizeWindow(map_type_);
+	ResizeWindow(sz);
 	sattrack_ctrl.start();
 }
+
+void SDRunoPlugin_SatTrackForm::SetModulation(const std::string& value) {
+	const std::string& name = GetSatName();
+
+	auto& sats = config_["satellites"];
+	if (!sats.contains_key(name)) {
+		create_sat_entry(sats, name);
+	}
+	sats[name]["modulation"] = value;
+}
+
+void SDRunoPlugin_SatTrackForm::SetBandwidth(double value) {
+	const std::string& name = GetSatName();
+
+	auto& sats = config_["satellites"];
+	if (!sats.contains_key(name)) {
+		create_sat_entry(sats, name);
+	}
+	sats[name]["bandwidth"] = value;
+	}
+
+std::string SDRunoPlugin_SatTrackForm::GetTLEFile() const {
+	return config_["current"]["tle_file"].str_val();
+	}
+
+std::string SDRunoPlugin_SatTrackForm::GetSatName() const {
+	return config_["current"]["name"].str_val();
+	}
+
+std::string SDRunoPlugin_SatTrackForm::GetLocationName() const {
+	return config_["location"]["name"].str_val();
+	}
+
+double SDRunoPlugin_SatTrackForm::GetLatitude() const {
+	return config_["location"]["latitude"].num_val();
+	}
+
+double SDRunoPlugin_SatTrackForm::GetLongitude() const {
+	return config_["location"]["longitude"].num_val();
+	}
+
+double SDRunoPlugin_SatTrackForm::GetElevation() const {
+	return config_["location"]["elevation"].num_val();
+	}
+
+double SDRunoPlugin_SatTrackForm::GetDownlinkFreq() {
+	const std::string& name = GetSatName();
+
+	auto& sats = config_["satellites"];
+	if (!sats.contains_key(name)) {
+		create_sat_entry(sats, name);
+	}
+	return sats[name]["downlink"].num_val();
+	}
+
+std::string SDRunoPlugin_SatTrackForm::GetModulation() {
+	const std::string& name = GetSatName();
+
+	auto& sats = config_["satellites"];
+	if (!sats.contains_key(name)) {
+		create_sat_entry(sats, name);
+	}
+	return sats[name]["modulation"].str_val();
+	}
+
+double SDRunoPlugin_SatTrackForm::GetBandwidth() {
+	const std::string& name = GetSatName();
+
+	auto& sats = config_["satellites"];
+	if (!sats.contains_key(name)) {
+		create_sat_entry(sats, name);
+	}
+	return sats[name]["bandwidth"].num_val();
+	}
+
+e_map_type SDRunoPlugin_SatTrackForm::GetMapSize() const {
+
+	int map_size = (int)config_["current"]["map_size"].num_val();
+
+	return static_cast<e_map_type>(map_size);
+	}
+
+json_utils::json_value& SDRunoPlugin_SatTrackForm::GetSelections() {
+	return config_["selections"];
+	}
 
 void SDRunoPlugin_SatTrackForm::LoadSettings() 	{
 	std::string tmp;
@@ -334,77 +436,33 @@ void SDRunoPlugin_SatTrackForm::LoadSettings() 	{
 		std::string strpath(szPath);
 		if (strpath.back() != '\\') 
 			strpath = strpath + "\\";
-		strpath = strpath + "CommunityPlugins";
-
-		SetDatasFolder(strpath);
+		data_dir_ = strpath + "CommunityPlugins\\";
 	}
 	else {
-		SetDatasFolder(tmp);
+		data_dir_ = (tmp.back() != '\\') ? tmp + "\\" : tmp;
+
 	}
 
-	m_controller.GetConfigurationKey("SatTrack.TLEfile", tmp);
-	if (tmp.empty()) {
-		current_file_ = "weather.txt";
-	}
-	else {
-		current_file_ = tmp;
+	m_controller.SetConfigurationKey("SatTrack.DatasFolder", data_dir_);
+
+	maps_dirs_ = data_dir_ + "maps\\";
+	tle_files_dirs_ = data_dir_ + "tle\\";
+	tle_list_ = tle_files_dirs_ + TLE_LIST;
+	config_file_ = tle_files_dirs_ + CONFIG_FILE;
+
+	if (!std::filesystem::exists(config_file_)) {
+		create_default_config(config_file_);
 	}
 
-	m_controller.GetConfigurationKey("SatTrack.SatName", tmp);
-	if (tmp.empty()) {
-		current_sat_ = "NOAA 19";
-	}
-	else {
-		current_sat_ = tmp;
+	if (!std::filesystem::exists(config_file_) || !parse_file(config_file_, config_)) {
+		nana::msgbox mb(*this, "SDRunoPlugin_SatTrackForm");
+		mb << config_file_ << " not found or incorrect, Please check the " << tle_files_dirs_ << " folder.";
+		mb.show();
+
+		return;
 	}
 
-	m_controller.GetConfigurationKey("SatTrack.LocationName", tmp);
-	if (tmp.empty()) {
-		location_name_ = "Greenwich";
-	}
-	else {
-		location_name_ = tmp;
-	}
-
-	m_controller.GetConfigurationKey("SatTrack.LocLatitude", tmp);
-	if (tmp.empty()) {
-		obs_lat_deg_ = 51.482578;
-	}
-	else {
-		obs_lat_deg_ = std::stod(tmp);
-	}
-
-	m_controller.GetConfigurationKey("SatTrack.LocLongitude", tmp);
-	if (tmp.empty()) {
-		obs_lon_deg_ = -0.007659;
-	}
-	else {
-		obs_lon_deg_ = std::stod(tmp);
-	}
-
-	m_controller.GetConfigurationKey("SatTrack.LocElevation", tmp);
-	if (tmp.empty()) {
-		obs_elev_in_meters_ = 6.09;
-	}
-	else {
-		obs_elev_in_meters_ = std::stod(tmp);
-	}
-
-	m_controller.GetConfigurationKey("SatTrack.DownlinkFreq", tmp);
-	if (tmp.empty()) {
-		downlinkFreq_ = 137.100000;
-	}
-	else {
-		downlinkFreq_ = std::stod(tmp);
-	}
-
-	m_controller.GetConfigurationKey("SatTrack.MapSize", tmp);
-	if (tmp.empty()) {
-		map_type_ = e_map_type::small_size;
-	}
-	else {
-		map_type_ = static_cast<e_map_type>(std::stoi(tmp));
-	}
+	SatChanged();
 
 	m_controller.GetConfigurationKey("SatTrack.X", tmp);
 	if (tmp.empty()) {
@@ -412,6 +470,8 @@ void SDRunoPlugin_SatTrackForm::LoadSettings() 	{
 	}
 	else {
 		formX_ = stoi(tmp);
+		if (formX_ < 0)
+			formX_ = 0;
 	}
 
 	m_controller.GetConfigurationKey("SatTrack.Y", tmp);
@@ -420,6 +480,8 @@ void SDRunoPlugin_SatTrackForm::LoadSettings() 	{
 	}
 	else {
 		formY_ = stoi(tmp);
+		if (formY_ < 0)
+			formY_ = 0;
 	}
 
 	m_controller.GetConfigurationKey("SatTrack.SettingsX", tmp);
@@ -428,6 +490,9 @@ void SDRunoPlugin_SatTrackForm::LoadSettings() 	{
 	}
 	else {
 		settingsX_ = stoi(tmp);
+		if (settingsX_ < 0)
+			settingsX_ = 0;
+
 	}
 
 	m_controller.GetConfigurationKey("SatTrack.SettingsY", tmp);
@@ -436,6 +501,31 @@ void SDRunoPlugin_SatTrackForm::LoadSettings() 	{
 	}
 	else {
 		settingsY_ = stoi(tmp);
+		if (settingsY_ < 0)
+			settingsY_ = 0;
+
+	}
+
+	m_controller.GetConfigurationKey("SatTrack.PredictX", tmp);
+	if (tmp.empty()) {
+		predictX_ = formX_;
+	}
+	else {
+		predictX_ = stoi(tmp);
+		if (predictX_ < 0)
+			predictX_ = 0;
+
+	}
+
+	m_controller.GetConfigurationKey("SatTrack.PredictY", tmp);
+	if (tmp.empty()) {
+		predictY_ = formY_;
+	}
+	else {
+		predictY_ = stoi(tmp);
+		if (predictY_ < 0)
+			predictY_ = 0;
+
 	}
 }
 
@@ -466,14 +556,25 @@ void SDRunoPlugin_SatTrackForm::ResizeWindow(e_map_type map_type) {
 
 	close_button.move(nana::point(formWidth - 26, 9));
 
-	sattrack_ctrl.set_map(map_type_, maps_dirs_);
+	sattrack_ctrl.set_map(GetMapSize(), maps_dirs_);
 }
 
 void SDRunoPlugin_SatTrackForm::SavePos() {
-	m_controller.SetConfigurationKey("SatTrack.X", std::to_string(formX_));
-	m_controller.SetConfigurationKey("SatTrack.Y", std::to_string(formY_));
-	m_controller.SetConfigurationKey("SatTrack.SettingsX", std::to_string(settingsX_));
-	m_controller.SetConfigurationKey("SatTrack.SettingsY", std::to_string(settingsY_));
+	// do not store negative position (-32000 when windows is minimized)
+	if (formX_ >= 0 && formY_ >= 0) {
+		m_controller.SetConfigurationKey("SatTrack.X", std::to_string(formX_));
+		m_controller.SetConfigurationKey("SatTrack.Y", std::to_string(formY_));
+	}
+
+	if (settingsX_ >= 0 && settingsY_ >= 0) {
+		m_controller.SetConfigurationKey("SatTrack.SettingsX", std::to_string(settingsX_));
+		m_controller.SetConfigurationKey("SatTrack.SettingsY", std::to_string(settingsY_));
+	}
+
+	if (predictX_ >= 0 && predictY_ >= 0) {
+		m_controller.SetConfigurationKey("SatTrack.PredictX", std::to_string(predictX_));
+		m_controller.SetConfigurationKey("SatTrack.PredictY", std::to_string(predictY_));
+	}
 }
 
 void SDRunoPlugin_SatTrackForm::DopplerTick() {

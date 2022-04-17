@@ -16,6 +16,7 @@
 
 #include <iunoplugincontroller.h>
 
+#include "sat_tools.h"
 #include "sattrack_widget.h"
 
 // Shouldn't need to change these
@@ -47,6 +48,9 @@ public:
 	void SetLongitude(double value);
 	void SetElevation(double value);
 	void SetDownlinkFreq(double value);
+	void SetModulation(const std::string& value);
+	void SetBandwidth(double value);
+
 	void SetMapSize(e_map_type sz);
 
 	std::string GetDatasFolder() const {
@@ -65,30 +69,16 @@ public:
 		return tle_list_;
 	}
 
-	std::string GetTLEFile() const {
-		return current_file_;
-	}
-	std::string GetSatName() const {
-		return current_sat_;
-	}
-	std::string GetLocationName() const {
-		return location_name_;
-	}
-	double GetLatitude() const {
-		return obs_lat_deg_;
-	}
-	double GetLongitude() const {
-		return obs_lon_deg_;
-	}
-	double GetElevation() const {
-		return obs_elev_in_meters_;
-	}
-	double GetDownlinkFreq() const {
-		return downlinkFreq_;
-	}
-	e_map_type GetMapSize() const {
-		return map_type_;
-	}
+	std::string GetTLEFile() const;
+	std::string GetSatName() const;
+	std::string GetLocationName() const;
+	double GetLatitude() const;
+	double GetLongitude() const;
+	double GetElevation() const;
+	double GetDownlinkFreq();
+	std::string GetModulation();
+	double GetBandwidth();
+	e_map_type GetMapSize() const;
 
 	void SetFormX(int x) {
 		formX_ = x;
@@ -122,6 +112,24 @@ public:
 		return settingsY_;
 	}
 
+	void SetPredictX(int x) {
+		predictX_ = x;
+	}
+
+	void SetPredictY(int y) {
+		predictY_ = y;
+	}
+
+	int GetPredictX() const {
+		return predictX_;
+	}
+
+	int GetPredictY() const {
+		return predictY_;
+	}
+
+	json_utils::json_value& GetSelections();
+
 	void SavePos();
 	void LoadPos();
 
@@ -131,25 +139,19 @@ private:
 	std::string data_dir_{};
 	std::string maps_dirs_{};
 	std::string tle_files_dirs_{};
+
 	std::string tle_list_{};
+	std::string config_file_{};
 
-	std::string current_file_{};
-	std::string current_sat_{};
-	std::string location_name_{};
-
-	double obs_lat_deg_{ };
-	double obs_lon_deg_{  };
-	double obs_elev_in_meters_{  };
-
-	double downlinkFreq_{};
-
-	e_map_type map_type_{};
+	json_utils::json_value config_{};
 
 	int formX_{};
 	int formY_{};
 
 	int settingsX_{};
 	int settingsY_{};
+	int predictX_{};
+	int predictY_{};
 
 	nana::timer dopplerTimer_;
 	void DopplerTick();

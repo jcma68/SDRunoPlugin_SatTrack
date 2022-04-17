@@ -173,6 +173,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="json_parser.cpp" />
+    <ClCompile Include="PredictDialog.cpp" />
     <ClCompile Include="sattrack_widget.cpp" />
     <ClCompile Include="sat_tools.cpp" />
     <ClCompile Include="SDRunoPlugin_SatTrackProject.cpp" />
@@ -184,6 +186,8 @@
     <ClCompile Include="SGP4.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="json_parser.h" />
+    <ClInclude Include="PredictDialog.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="sattrack_widget.h" />
     <ClInclude Include="sat_tools.h" />

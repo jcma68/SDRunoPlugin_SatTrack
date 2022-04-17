@@ -1,0 +1,143 @@
+{
+  "current": {
+    "comment": "Weather",
+    "map_size": 2,
+    "name": "NOAA 19",
+    "tle_file": "weather.txt"
+  },
+  "location": {
+    "elevation": 6.09,
+    "latitude": 51.482578,
+    "longitude": -0.007659,
+    "name": "Greenwich"
+  },
+  "satellites": {
+    "AEROCUBE 12A": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "COMS 1": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "GOES 14": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "GOES 15": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "ISS (ZARYA)": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "ISS DEB": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "METEOR-M 2": {
+      "bandwidth": 150000,
+      "bauds": 80000,
+      "downlink": 137.1,
+      "mode": "LRPT",
+      "modulation": "FM"
+    },
+    "METEOSAT-10 (MSG-3)": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "NOAA 15": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.62,
+      "mode": "APT",
+      "modulation": "FM"
+    },
+    "NOAA 18": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.9125,
+      "mode": "APT",
+      "modulation": "AM"
+    },
+    "NOAA 19": {
+      "bandwidth": 38000,
+      "bauds": 1700,
+      "downlink": 137.1,
+      "mode": "APT",
+      "modulation": "FM"
+    }
+  },
+  "selections": {
+    "COMS 1": false,
+    "CYGFM01": false,
+    "CYGFM02": false,
+    "CYGFM03": false,
+    "CYGFM04": false,
+    "CYGFM05": false,
+    "CYGFM06": false,
+    "CYGFM07": false,
+    "CYGFM08": false,
+    "DMSP 5D-3 F15 (USA 147)": false,
+    "DMSP 5D-3 F16 (USA 172)": false,
+    "DMSP 5D-3 F17 (USA 191)": false,
+    "DMSP 5D-3 F18 (USA 210)": false,
+    "ELEKTRO-L 2": false,
+    "EWS-G1 (GOES 13)": false,
+    "FENGYUN 2E": false,
+    "FENGYUN 2F": false,
+    "FENGYUN 2G": false,
+    "FENGYUN 2H": false,
+    "FENGYUN 3A": false,
+    "FENGYUN 3B": false,
+    "FENGYUN 3C": false,
+    "FENGYUN 3D": false,
+    "FENGYUN 3E": false,
+    "FENGYUN 4A": false,
+    "GEO-KOMPSAT-2A": false,
+    "GOES 14": false,
+    "GOES 15": false,
+    "GOES 16": false,
+    "GOES 17": false,
+    "GOES 18": false,
+    "HIMAWARI-8": false,
+    "HIMAWARI-9": false,
+    "METEOR-M 1": false,
+    "METEOR-M 2": true,
+    "METEOR-M2 2": false,
+    "METEOSAT-10 (MSG-3)": false,
+    "METEOSAT-11 (MSG-4)": false,
+    "METEOSAT-8 (MSG-1)": false,
+    "METEOSAT-9 (MSG-2)": false,
+    "METOP-B": false,
+    "METOP-C": false,
+    "NOAA 15": true,
+    "NOAA 18": true,
+    "NOAA 19": true,
+    "NOAA 20": false,
+    "SUOMI NPP": false,
+    "sat_elevation": 0
+  }
+}

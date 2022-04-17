@@ -1,6 +1,8 @@
 #include "sat_calc.h"
 #include <time.h>
 #include <fstream>
+#include <locale>
+#include <format>
 
 // Convert to greenwich mean sidereal time
 double to_gmst(double jd) {
@@ -117,112 +119,6 @@ static bool tle_checksum(const std::string& buff) {
 
 	return ((cksum % 10) == (buff[68] - '0'));
 }
-
-#if 0
-double getElement(char* gstr, int gstart, int gstop) {
-	double retval;
-	int    k, glength;
-	char   gestr[80];
-
-	glength = gstop - gstart + 1;
-
-	for (k = 0; k <= glength; k++)
-		gestr[k] = gstr[gstart + k - 1];
-
-	gestr[glength] = '\0';
-
-	retval = atof(gestr);
-	return(retval);
-}
-
-int readTle(int satNameFlag, char* satNameTle, long* pSatNum, int* pElementSet,
-			double* pEpochDay, double* pInclination, double* pRaan, double* pEccentricity,
-			double* pArgPerigee, double* pMeanAnomaly, double* pMeanMotion,
-			double* pDecayRate, double* pDecayRateDot, double* pbStarCoeff,
-			long* pOrbitNum, int* pEphemerisType) {
-	double epochYear, exponent, atofSatNum, checkLow, checkHigh;
-	long   strSatNum;
-	long   tleSatNum = 0L;
-	long   saveSatNum = 0L;
-	int    error, satNameLen, checkSum, checkValue, takeSatNum;
-	int    i, j, m, n;
-	int    tleIndex = 0;
-	char   line0[80], line1[80], line2[80], str[80], strng[10], saveStr[80];
-	char   tleStr[80];
-
-	satNameLen = strlen(satNameTle);
-	atofSatNum = atof(satNameTle);
-
-	checkLow = pow(10.0, (double)(satNameLen - 1)) - ONEPPM;
-	checkHigh = pow(10.0, (double)(satNameLen)) - 1.0 + ONEPPM;
-
-	takeSatNum = (atofSatNum > checkLow && atofSatNum < checkHigh) ? TRUE : FALSE;
-
-	if (takeSatNum)
-		satNameFlag = FALSE;
-
-	upperCase(satNameTle);
-
-	error = FALSE;
-	m = 0;
-
-	for (i = 0; i < numTle; i++)               /* check for ambiguous entries */
-	{
-		if (m == 1) {
-			strcpy(saveStr, tleStr);
-			saveSatNum = tleSatNum;
-		}
-
-		strcpy(str, tle[i].tleLine0);
-		upperCase(str);
-		strSatNum = tle[i].tleSatNum;
-
-		n = (satNameFlag) ? satNameLen : strlen(str);
-
-		if ((!takeSatNum && n == satNameLen &&
-			 !strncmp(satNameTle, str, (unsigned int)satNameLen)) ||
-			(takeSatNum && (long)(atofSatNum + ONEPPM) == strSatNum)) {
-			strcpy(tleStr, tle[i].tleLine0);
-			tleSatNum = tle[i].tleSatNum;
-
-			if (m == 0)
-				tleIndex = i;
-
-			if (m == 1)
-				printf("\n%5ld:  %s\n", saveSatNum, saveStr);
-
-			if (m >= 1)
-				printf("%5ld:  %s\n", tleSatNum, tleStr);
-
-			m++;
-		}
-	}
-
-	if (m == 0)                                        /* satellite not found */
-		return(3);
-
-	if (m > 1)                                         /* multiple entries    */
-		return(4);
-
-	strcpy(line0, tle[tleIndex].tleLine0);              /* continue if m = 1   */
-	truncBlanks(line0);                                /* (only one entry)    */
-
-	strcpy(satNameTle, line0);
-	strcpy(line1, tle[tleIndex].tleLine1);                      /* read line 1 */
-	strcpy(line2, tle[tleIndex].tleLine2);                      /* read line 2 */
-
-
-
-	exponent = getElement(line1, 51, 52);
-	*pDecayRateDot = getElement(line1, 45, 50) * pow(10.0, -5.0 + exponent);
-
-	exponent = getElement(line1, 60, 61);
-	*pbStarCoeff = getElement(line1, 54, 59) * pow(10.0, -5.0 + exponent);
-
-	return(0);
-}
-
-#endif
 
 //  XXXXXXXXXXX                                                              
 //  1 AAAAAU 00  0  0 BBBBB.BBBBBBBB +.CCCCCCCC +DDDDD-D +EEEEE-E F  GGGZ    
@@ -384,7 +280,7 @@ void parse_tle_lines(const line_pair& tle_data, char opsmode, gravconsttype whic
 						satrec.nodeo, satrec);
 }
 
-// TODO: Ignore inactive satellites, remvove [-], [D]
+// Satellites with a status [-] or [D] are ignored.
 // Operational Status	Descriptions
 // [+]					Operational
 // [-]					Nonoperational
@@ -415,6 +311,9 @@ std::map<std::string, line_pair> load_tle_file(const std::string& filename) {
 			break;
 
 		std::string name = str;
+		if (name.find("[-]") != std::string::npos || name.find("[D]") != std::string::npos)
+			continue;
+
 		name.erase(std::find_if(name.rbegin(), name.rend(), [](unsigned char ch) {
 			return !std::isspace(ch);
 		}).base(), name.end());
@@ -478,3 +377,121 @@ int get_orbit_num(double jd, const elsetrec& satrec) {
 	return (int)(refOrbit + curMotion * dT);
 }
 
+double tz_seconds() {
+	time_t now = time(NULL);
+	struct tm utctm;
+	gmtime_s(&utctm, &now);
+	utctm.tm_isdst = -1;
+	time_t utctt = mktime(&utctm);
+	return difftime(now, utctt);
+}
+
+std::string julian_to_string(double jd, bool utc) {
+	int year, mon, day;
+	int hr, minute;
+	double sec;
+
+	if (!utc)
+		jd += tz_seconds() / (60 * 60 * 24);
+
+	SGP4Funcs::invjday_SGP4(jd, 0.0, year, mon, day, hr, minute, sec);
+
+	std::string str;
+
+	std::time_get<char>::dateorder order = std::use_facet<std::time_get<char> >(std::locale("")).date_order();
+	switch (order) {
+	case std::time_get<char>::dmy:
+		// dd/mm/yyyy
+		str = std::format("{:02d}/{:02d}/{:04d} {:02d}:{:02d}:{:02d}", day, mon, year, hr, minute, (int)sec);
+		break;
+
+	case std::time_get<char>::mdy:
+		// mm/dd/yyyy
+		str = std::format("{:02d}/{:02d}/{:04d} {:02d}:{:02d}:{:02d}", mon, day, year, hr, minute, (int)sec);
+		break;
+
+	case std::time_get<char>::ymd:
+		// yyyy/mm/dd
+		str = std::format("{:04d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d}", year, mon, day, hr, minute, (int)sec);
+		break;
+
+	case std::time_get<char>::ydm:
+		// yyyy/dd/mm"
+		str = std::format("{:04d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d}", year, day, mon, hr, minute, (int)sec);
+		break;
+
+	default:
+		str = std::format("{:02d}/{:02d}/{:04d} {:02d}:{:02d}:{:02d}", day, mon, year, hr, minute, (int)sec);
+		break;
+	}
+
+	if (utc)
+		str += " (UTC)";
+
+	return str;
+}
+
+std::tuple<double, double> calc_azm_elev(double jd, observer_t& observer, elsetrec& satrec) {
+	double tle_date = satrec.jdsatepoch + satrec.jdsatepochF;
+
+	eci_pos_t sat = get_sat_pos((jd - tle_date) * 1440, satrec);
+	if (satrec.error != 0)
+		return { -1.0, -1.0 };
+
+	topocentric_t topo = observer.get_lookup_angle(jd, sat);
+
+	return { topo.azimuth, topo.elevation };
+}
+
+double calc_elev(double jd, observer_t& observer, elsetrec& satrec) {
+	double tle_date = satrec.jdsatepoch + satrec.jdsatepochF;
+
+	eci_pos_t sat = get_sat_pos((jd - tle_date) * 1440, satrec);
+	if (satrec.error != 0)
+		return 0.0;
+
+	topocentric_t topo = observer.get_lookup_angle(jd, sat);
+
+	return topo.elevation;
+}
+
+double regula_falsi(double xg, double xd, observer_t& observer, elsetrec& satrec) {
+	const double eps = 1e-7;
+
+	double yg = 0.0;
+	double yd = 0.0;
+	double yk = 0.0;
+
+	for (int i = 0; i < 10; i++) {
+		yg = calc_elev(xg, observer, satrec);
+		if (satrec.error != 0)
+			return -1.0;
+
+		yd = calc_elev(xd, observer, satrec);
+		if (satrec.error != 0)
+			return -1.0;
+
+		double xk = (xg * yd - xd * yg) / (yd - yg);
+		yk = calc_elev(xk, observer, satrec);
+		if (satrec.error != 0)
+			return -1.0;
+
+
+		if (yk * yd <= 0.0) {
+			xg = xk;
+			yg = yk;
+		}
+		else {
+			xd = xk;
+			yd = yk;
+		}
+
+		if (std::fabs(xd - xg) < eps)
+			return (xd + xg) / 2;
+
+		if (std::fabs(yk) < eps)
+			return xk;
+	}
+
+	return (xd + xg) / 2;
+}
