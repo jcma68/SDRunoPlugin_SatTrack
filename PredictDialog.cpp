@@ -84,7 +84,10 @@ void PredictDialog::Setup() {
 	prog_.bgcolor(nana::colors::black);
 	prog_.hide();
 
-	btn_predict.events().click(nana::threads::pool_push(thrpool_, *this, &PredictDialog::Predict));
+	//btn_predict.events().click(nana::threads::pool_push(thrpool_, *this, &PredictDialog::Predict));
+	btn_predict.events().click([&] {
+		Predict();
+	});
 
 	events().unload([&] {
 

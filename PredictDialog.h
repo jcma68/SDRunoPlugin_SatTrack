@@ -60,7 +60,7 @@ private:
 	observer_t observer_;
 	double filter_{};
 
-	nana::threads::pool thrpool_;
+	//nana::threads::pool thrpool_;
 	std::atomic_bool canceled_ = false;
 
 	std::multiset<predict_results> results_;
