@@ -223,7 +223,8 @@ namespace drawerbase {
 					break;
 				}
 
-				s = std::format("{:%d-%m-%Y %H:%M:%OS}", std::chrono::system_clock::now());
+				std::chrono::zoned_time now{ std::chrono::current_zone(), std::chrono::system_clock::now() };
+				s = std::format("{:%d-%m-%Y %H:%M:%OS}", now);
 				graph.string(nana::point{ (int)(margin_left + (map_type == e_map_type::small_size ? 0.73 : 0.78) * world_size.width), text_pos }, s, nana::colors::white);
 
 				text_pos = world_size.height + margin_top + (margin_bottom - graph.text_extent_size(sat_name).height) / 2;
