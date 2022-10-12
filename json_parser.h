@@ -66,10 +66,6 @@ namespace json_utils {
 
 		int pos() { return pos_; }
 
-		int peek() {
-			return source_[pos_];
-		}
-
 		int next_char() {
 			if (empty()) {
 				reset();
@@ -122,10 +118,6 @@ namespace json_utils {
 		bool empty() const { return (source_[pos_] == '\0'); }
 
 		int pos() { return pos_; }
-
-		int peek() {
-			return source_[pos_];
-		}
 
 		int next_char() {
 			if (empty())
