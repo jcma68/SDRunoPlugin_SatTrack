@@ -17,7 +17,7 @@ namespace json_utils {
 	{ json_tables::json_tokens::NULL_TOKEN, "null" },
 
 	{ json_tables::json_tokens::STRING_TOKEN, "<string>" },
-	{ json_tables::json_tokens::NUMBER_TOKEN, "<jnumber" },
+	{ json_tables::json_tokens::NUMBER_TOKEN, "<jnumber>" },
 
 
 	{ json_tables::json_tokens::EOFTOKEN, "<eof>" },
